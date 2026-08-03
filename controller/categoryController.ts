@@ -148,3 +148,71 @@ export const getCacheCat = async (
     });
   }
 };
+
+
+export const EditCategory = async(req:Request,res:Response)=>{
+  const file = req.file as Express.Multer.File | undefined;
+  const newImage = file?.filename
+    ? `/uploads/category/${file.filename}`
+    : null;
+
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    const category = await Category.findById(id);
+
+    if (!category) {
+      // Remove newly uploaded image if category does not exist
+      if (newImage) {
+        await removeImage({ imgpath: newImage });
+      }
+
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    if (name?.trim()) {
+      category.name = name.trim();
+    }
+
+    if (newImage) {
+      const oldImage = category.image;
+      category.image = newImage;
+
+      await category.save();
+
+      // Remove old image only after successful database update
+      if (oldImage) {
+        try {
+          await removeImage({ imgpath: oldImage });
+        } catch (error) {
+          console.error("Unable to remove old category image:", error);
+        }
+      }
+    } else {
+      await category.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      category,
+    });
+  } catch (error) {
+    
+    if (newImage) {
+      try {
+        await removeImage({ imgpath: newImage });
+      } catch (removeError) {
+        console.error("Unable to remove uploaded image:", removeError);
+      }
+    }
+
+  return res.status(500).json({
+    success:false, message:error
+  })
+  }
+}
