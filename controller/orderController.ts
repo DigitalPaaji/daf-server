@@ -22,7 +22,7 @@ interface AuthRequest extends Request {
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    console.log(user,"no1")
+  
     const { address, price, discount, totalPrice, items } = req.body;
     if (!totalPrice || totalPrice <= 0) {
       return res.status(400).json({
@@ -31,7 +31,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-console.log(req.body,"no2")
+
         const amountInPaise = Math.round(Number(totalPrice) * 100);
          const receipt = `receipt_${Date.now()}`;
 
@@ -75,7 +75,7 @@ console.log(req.body,"no2")
 
 
   } catch (error) {
-  console.log(error)
+  
   return res.status(500).json({
     success:false,
     message:error
@@ -191,7 +191,7 @@ return res.status(200).json({
     });
 
   } catch (error) {
-   console.log(error)
+  
     return res.status(500).json({
       success: false,
       message: "Internal server error",

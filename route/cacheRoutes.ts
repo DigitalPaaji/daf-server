@@ -17,6 +17,7 @@ routes.get("/product/single/:slug",getSingleProduct)
 routes.get("/product/category/:categoryid",getProductbycat)
 routes.get("/product/get",getProducts)
 routes.get("/product/search/:search",SearchProduct)
+
 routes.get("/product/random/:catid",getRandomProduct)
 
 routes.get("/videos/random",getRandomVideo)
