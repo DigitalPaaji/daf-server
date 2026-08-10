@@ -111,7 +111,7 @@ export const getCacheCat = async (
   res: Response
 )=> {
   try {
-    const cacheKey = "categories";
+    const cacheKey = "categories-daf";
 
     
     const cachedData = await redisClient.get(cacheKey);

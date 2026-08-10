@@ -184,7 +184,7 @@ await blog.deleteOne();
 
 export const getBlogs=async(req:Request,res:Response)=>{
 try {
-    const key= "blogs"
+    const key= "blogs-daf"
 
 const cacheBlogs = await redisClient.get(key);
 

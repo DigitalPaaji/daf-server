@@ -123,7 +123,7 @@ try {
 
   export const getRandomVideo = async(req: Request,res: Response)=>{
 try {
-     const key = "random-videos";
+     const key = "random-videos-daf";
 
     const cachedVideos = await redisClient.get(key);
 
