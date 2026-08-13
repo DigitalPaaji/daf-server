@@ -15,3 +15,6 @@ route.get("/getsingle/:id",verifyAdmin as any,getSingleUser)
 
 
 export default route
+
+
+  

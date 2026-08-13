@@ -396,7 +396,7 @@ try {
         products: [],
       });
     }
-  const product = await  Product.find({  _id: { $in: wishlist }}).select("name slug shortDescription category thumbnail").populate({path:"category",select:"name slug"})
+  const product = await  Product.find({  _id: { $in: wishlist }}).select("variants name  thumbnail slug category").populate({path:"category",select:"name slug"})
 
 return res.status(200).json({
       success: true,
@@ -925,7 +925,7 @@ if(catid =="All"){
 }).select("name slug thumbnail category variants").populate({
       path: "category",
       select: "name slug image",
-    })
+    }).limit(8);
 }
 else{
  products = await Product.find({
@@ -934,7 +934,7 @@ else{
 }).select("name slug thumbnail category variants").populate({
       path: "category",
       select: "name slug image",
-    })
+    }).limit(8);
 }
 
 
