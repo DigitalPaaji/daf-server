@@ -411,3 +411,135 @@ await order.save();
     })
   }
 }
+
+
+
+export const GetOrderDetails = async (req: Request, res: Response) => {
+  try {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const monthlyOrderChart = Order.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          orders: { $sum: 1 },
+          paidOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "Paid"] }, 1, 0],
+            },
+          },
+          revenue: { $sum: "$totalPrice" },
+          paidRevenue: {
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$totalPrice", 0],
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1,
+        },
+      },
+    ]);
+    const [
+      totalOrders,
+      paidOrders,
+      monthlyOrders,
+      monthlyPaidOrders,
+      totalSalesAgg,
+      paidSalesAgg,
+      latestOrders,
+      monthlyOrdersChart,
+    ] = await Promise.all([
+      Order.countDocuments(),
+      Order.countDocuments({ paymentStatus: "Paid" }),
+
+      Order.countDocuments({
+        createdAt: { $gte: startOfMonth },
+      }),
+
+      Order.countDocuments({
+        paymentStatus: "Paid",
+        createdAt: { $gte: startOfMonth },
+      }),
+
+      Order.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
+
+      Order.aggregate([
+        {
+          $match: { paymentStatus: "Paid" },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
+
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate("user", "name email")
+        .populate("address")
+        .lean(),
+
+      monthlyOrderChart,
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalOrders,
+        paidOrders,
+        monthlyOrders,
+        monthlyPaidOrders,
+        totalSales: totalSalesAgg[0]?.total ?? 0,
+        paidSales: paidSalesAgg[0]?.total ?? 0,
+        latestOrders,
+        monthlyOrdersChart,
+      },
+    });
+  } catch (error: any) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch dashboard data.",
+      error: error.message,
+    });
+  }
+};
+
+
+export const DeleteOrder = async (req: Request, res: Response) =>  {
+  try{
+const orderID = req.params.id;
+await Order.findByIdAndDelete(orderID);
+
+return res.status(200).json({
+  success:true,
+  message:"Order Deleted"
+})
+
+
+  }
+  catch(error){
+return res.status(500).json({
+  success:false,message:error
+})
+  }
+}

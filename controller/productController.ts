@@ -117,13 +117,40 @@ export const getProduts = async (req: Request, res: Response) => {
     const limit = 15;
     const skip = (page - 1) * limit;
 
+const search = String(req.query.search || "").trim();
+ const filter: any = {};
+
+    if (search) {
+      filter.$or = [
+        {
+          name: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          slug: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          shortDescription: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+
     const [products, total] = await Promise.all([
-      Product.find()
+      Product.find(filter)
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 }).select("name slug shortDescription  thumbnail category variants isFeatured").populate("category"),
 
-      Product.countDocuments()
+      Product.countDocuments(filter)
     ]);
 
     res.status(200).json({
@@ -359,7 +386,15 @@ const products = await Product.find({
   name: {
     $regex: safeSearch,
     $options: "i",
-  },
+  }, 
+  shortDescription: {
+            $regex: safeSearch,
+            $options: "i",
+          },
+   slug: {
+            $regex: safeSearch,
+            $options: "i",
+          },
 }).select("name slug thumbnail").sort({ createdAt: -1 })
       .limit(10)
       .lean();;
