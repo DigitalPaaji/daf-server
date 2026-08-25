@@ -1,5 +1,5 @@
 import express from "express";
-import { loginByGoogle, loginUser, myUser, sendOtp, verifyOtp } from "../../controller/user/AuthController";
+import { loginByGoogle, loginUser, logoutUser, myUser, sendOtp, verifyOtp } from "../../controller/user/AuthController";
 import { rateLimiter } from "../../helper/rateLimiter";
 import { verifyUser } from "../../middlewere/getUser";
 
@@ -12,5 +12,6 @@ routes.post("/verifyOtp",rateLimiter(5,5),verifyOtp)
 routes.post("/login",rateLimiter(5,5),loginUser)
 routes.post("/google",rateLimiter(5,5),loginByGoogle)
 routes.get("/verify-user",verifyUser as any ,myUser as any)
+routes.get("/logout",verifyUser as any ,logoutUser as any)
 export default routes
  

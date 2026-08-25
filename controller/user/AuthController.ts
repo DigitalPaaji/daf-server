@@ -337,3 +337,20 @@ export const myUser = async(req:RequestAuth,res:Response,next:NextFunction)=>{
 
 
 
+export const logoutUser = async(req:RequestAuth,res:Response,next:NextFunction)=>{
+  try {
+  
+       res.clearCookie("user_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+   return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error)
+  }
+}
