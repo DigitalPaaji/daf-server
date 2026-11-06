@@ -4,14 +4,33 @@ import Category from "../model/categoryModel";
 import { removeImage } from "../helper/removeImage";
 import redisClient from "../helper/redisServer";
 
-
+// interface MulterRequest extends Request {
+//   files?: {
+//     image?: Express.Multer.File[];
+//     desktop?: Express.Multer.File[];
+//     mobile?: Express.Multer.File[];
+//   };
+// }
 
 export const createCategory = async (req:Request,res:Response) => {
   try {
     const {name} = await req.body;
-  const image = req.file?.filename
+const files = req.files as {
+  [fieldname: string]: Express.Multer.File[];
+};
 
-   
+     const image = files?.image?.[0]?.filename;
+     const desktop = files?.desktop?.[0]?.filename;
+     const mobile = files?.mobile?.[0]?.filename;
+  
+   if (!image || !desktop || !mobile) {
+  return res.status(400).json({
+    success: false,
+    message: "Category, desktop and mobile images are required",
+  });
+}
+
+
 
     if (!name) {
       return res.status(400).json({ success: false, message: "Category name is required" });
@@ -37,6 +56,8 @@ export const createCategory = async (req:Request,res:Response) => {
       name,
       image:`/uploads/category/${image}`,
       slug,
+      desktop:`/uploads/category/${desktop}`,
+      mobile:`/uploads/category/${mobile}`,
     });
 
     return res.status(201).json({
@@ -91,12 +112,11 @@ export const deleteCategory= async(req:Request,res:Response)=>{
 
         if(category.image){
             await removeImage({imgpath:category.image})
+            await removeImage({imgpath:category.desktop})
+            await removeImage({imgpath:category.mobile})
         }
         await category.deleteOne()
-   return res.status(200).json({
-      success: true,
-      message: "Category deleted successfully",
-    });
+      return res.status(200).json({success: true, message: "Category deleted successfully"});
 
 
     } catch (error) {
@@ -150,11 +170,17 @@ export const getCacheCat = async (
 };
 
 
-export const EditCategory = async(req:Request,res:Response)=>{
-  const file = req.file as Express.Multer.File | undefined;
-  const newImage = file?.filename
-    ? `/uploads/category/${file.filename}`
-    : null;
+export const EditCategory = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const files = req.files as {
+    [fieldname: string]: Express.Multer.File[];
+  };
+
+  const image = files?.image?.[0]?.filename;
+  const desktop = files?.desktop?.[0]?.filename;
+  const mobile = files?.mobile?.[0]?.filename;
 
   try {
     const { id } = req.params;
@@ -163,56 +189,65 @@ export const EditCategory = async(req:Request,res:Response)=>{
     const category = await Category.findById(id);
 
     if (!category) {
-      // Remove newly uploaded image if category does not exist
-      if (newImage) {
-        await removeImage({ imgpath: newImage });
-      }
-
       return res.status(404).json({
         success: false,
         message: "Category not found",
       });
     }
 
-    if (name?.trim()) {
-      category.name = name.trim();
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
     }
 
-    if (newImage) {
-      const oldImage = category.image;
-      category.image = newImage;
+    // Store old image filenames
+    const oldImage = category.image;
+    const oldDesktop = category.desktop;
+    const oldMobile = category.mobile;
 
-      await category.save();
+    // Update category
+    category.name = name.trim();
 
-      // Remove old image only after successful database update
-      if (oldImage) {
+    if (image) category.image = `/uploads/category/${image}`;
+    if (desktop) category.desktop = `/uploads/category/${desktop}`;
+    if (mobile) category.mobile = `/uploads/category/${mobile}`;
+
+    await category.save();
+
+    // Remove old images after successful update
+    const imagesToRemove = [
+      image ? oldImage : null,
+      desktop ? oldDesktop : null,
+      mobile ? oldMobile : null,
+    ];
+
+
+
+    for (const oldimage of imagesToRemove) {
+      if (oldimage) {
         try {
-          await removeImage({ imgpath: oldImage });
+          await removeImage({ imgpath: oldimage });
         } catch (error) {
-          console.error("Unable to remove old category image:", error);
+          console.error("Unable to remove old image:", error);
         }
       }
-    } else {
-      await category.save();
     }
+
 
     return res.status(200).json({
       success: true,
       message: "Category updated successfully",
       category,
     });
-  } catch (error) {
-    
-    if (newImage) {
-      try {
-        await removeImage({ imgpath: newImage });
-      } catch (removeError) {
-        console.error("Unable to remove uploaded image:", removeError);
-      }
-    }
 
-  return res.status(500).json({
-    success:false, message:error
-  })
+  } catch (error: any) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
   }
-}
+};

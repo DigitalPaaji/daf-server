@@ -5,6 +5,8 @@ interface ICategory extends Document{
     name:string;
     slug:string;
     image:string;
+    desktop:string;
+    mobile:string;
     product:Types.ObjectId[];
 }
 
@@ -25,6 +27,16 @@ const categorySchema = new Schema<ICategory>({
         unique:true,
     },
     image:{
+        type:String,
+        required:true,
+        unique:true,
+    },
+    desktop:{
+       type:String,
+        required:true,
+        unique:true, 
+    },
+    mobile:{
         type:String,
         required:true,
         unique:true,
